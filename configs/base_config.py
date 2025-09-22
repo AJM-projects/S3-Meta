@@ -1,0 +1,26 @@
+"""Base configuration for all agents."""
+
+base_config = {
+    "contrastive_task_loss": False,
+    "use_kl_loss": True,
+    "multihead_for_reward": False,
+    "rew_pred_type": "deterministic",
+    "det_rew_decoder": True,
+    "det_decoder": True,
+    "input_prev_state": False,
+    "input_action": True,
+    "encoder_layers_before_gru": [32, 32],
+    "encoder_layers_after_gru": [32, 32],
+    "encoder_gru_hidden_size": 64,
+    "reward_embedding_size": 4,
+    "num_gru_layers": 2,
+    "lr": 0.0003,
+    "update_every_n": 2000,
+    "batch_size": 64,
+    "save_interval": 250,
+    "truncate_size": None,
+    "norm_actions_post_sampling": True,
+    "task_pred_type": "task_description",
+    "is_oracle": False,
+    "detach_every": 100,
+}

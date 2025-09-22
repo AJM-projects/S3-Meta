@@ -1,0 +1,4 @@
+# Ruff configuration
+
+[lint]
+per-file-ignores = { "utils/dmc_wrapper.py" = ["E721"] }
