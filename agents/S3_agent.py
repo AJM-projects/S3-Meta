@@ -7,7 +7,18 @@ import torch.nn.functional as F
 
 
 class S3Agent(BaseAgent):
+    """
+    S3Agent implements the Selective State-Space Meta-Reinforcement Learning agent.
+    It uses a Mamba-based encoder for task inference and supports reward reconstruction 
+    and contrastive task losses.
+    """
+
     def __init__(self, config):
+        """
+        Initialise the S3Agent.
+
+        :param config: Namespace containing agent hyperparameters.
+        """
         super(S3Agent, self).__init__(config)
         assert self.decode_reward
         assert not self.decode_task
@@ -15,7 +26,11 @@ class S3Agent(BaseAgent):
         assert self.use_kl_loss
 
     def initialise_encoder(self):
-        """Initialize the improved Mamba encoder with configurable parameters."""
+        """
+        Initialize the improved Mamba encoder with configurable parameters.
+
+        :return: A VariationalS3Encoder instance.
+        """
         block_config = S3BlockConfig(
             d_model=self.args.d_model,
             d_state=self.args.d_state,
@@ -37,7 +52,16 @@ class S3Agent(BaseAgent):
     def get_reward_recon_loss(
         self, vae_prev_obs, vae_actions, vae_next_obs, latent_samples, vae_rewards
     ) -> torch.Tensor:
-        """Compute reward reconstruction loss."""
+        """
+        Compute reward reconstruction loss for the S3Agent.
+
+        :param vae_prev_obs: Previous observations.
+        :param vae_actions: Actions taken.
+        :param vae_next_obs: Next observations.
+        :param latent_samples: Samples from the latent distribution.
+        :param vae_rewards: Ground truth rewards.
+        :return: The reward reconstruction loss.
+        """
         latent_samples = latent_samples[:-1, :, :]
         rew_pred = self.reward_decoder(
             latent_samples, vae_next_obs, vae_prev_obs, vae_actions.float()
@@ -62,7 +86,17 @@ class S3Agent(BaseAgent):
         task_labels: torch.Tensor,
         temperature: float = 0.1,
     ) -> torch.Tensor:
-        """Compute contrastive task loss using InfoNCE."""
+        """
+        Compute contrastive task loss using InfoNCE between consecutive latent representations.
+
+        :param latent_mean: Mean of the latent distribution.
+        :param states: Observations (unused in this implementation).
+        :param actions: Actions (unused in this implementation).
+        :param rewards: Rewards (unused in this implementation).
+        :param task_labels: Ground truth task labels (unused in this implementation).
+        :param temperature: Temperature parameter for the contrastive similarity.
+        :return: The computed contrastive task loss.
+        """
         t_steps, batch_size, dim = latent_mean.shape
         device = latent_mean.device
 

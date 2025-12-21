@@ -11,27 +11,16 @@ import torch.nn as nn
 
 @dataclass
 class S3BlockConfig:
-    """Configuration container for a Mamba block.
+    """
+    Configuration container for a Mamba block.
 
-    Parameters
-    ----------
-    d_model : int
-        Dimension of the model (input and output features).
-    d_state : int
-        Dimension of the internal state per channel.  Larger values allow
-        the SSM to capture longer dependencies at the cost of memory.
-    d_conv : int
-        Width of the optional depthwise convolution.  Set to zero to disable
-        the convolution entirely.
-    expand : int
-        Expansion factor for intermediate projections.  The intermediate
-        dimension becomes ``expand * d_model``.
-    include_conv : bool, optional
-        Whether to include the depthwise convolution.  Default is True.
-    layer_norm : bool, optional
-        If True, applies a LayerNorm to the input before the block.
-    residual : bool, optional
-        If True, adds a skip connection from the input to the output.
+    :param d_model: Dimension of the model (input and output features).
+    :param d_state: Dimension of the internal state per channel. Larger values allow the SSM to capture longer dependencies.
+    :param d_conv: Width of the optional depthwise convolution. Set to zero to disable.
+    :param expand: Expansion factor for intermediate projections. Intermediate dimension becomes ``expand * d_model``.
+    :param include_conv: Whether to include the depthwise convolution. Default is True.
+    :param layer_norm: If True, applies a LayerNorm to the input before the block.
+    :param residual: If True, adds a skip connection from the input to the output.
     """
 
     d_model: int
@@ -44,35 +33,19 @@ class S3BlockConfig:
 
 
 class S3Block(nn.Module):
-    """Selective state‑space model block implementing the Mamba architecture.
+    """
+    Selective state‑space model block implementing the Mamba architecture.
 
     This block maintains a per‑channel hidden state of shape ``(B, d_model, d_state)``
-    and processes an input sequence ``x`` of shape ``(L, B, d_model)``.  At each
-    timestep it performs the following operations (see Mamba paper for details):
-
-    1. Optionally normalise the input via ``LayerNorm``.
-    2. Optionally apply a depthwise convolution to capture local context.
-    3. Linearly project the (possibly convolved) input into an expanded dimension
-       ``(L, B, expand * d_model)``, then split it into two parts:
-       ``u`` and ``v``.  These correspond to an input‑to‑state signal and a gating
-       signal.
-    4. Compute a discretisation parameter ``dt`` from ``x`` which modulates the
-       update speed of the state.
-    5. Update the hidden state ``h`` per channel using
-       ``h = (1 - dt) * h + dt * (u + B1 @ x)`` where ``B1`` is a learnable linear
-       projection from ``x``.  This is equivalent to the bilinear form described
-       in the Mamba paper.
-    6. Compute the output by multiplying the hidden state by a learnable
-       projection ``C`` and adding a skip connection via ``D``:
-       ``y = (v * (C @ h)) + (D @ x)``.
-
-    Parameters
-    ----------
-    config : S3BlockConfig
-        Configuration specifying dimensions and optional components.
+    and processes an input sequence ``x`` of shape ``(L, B, d_model)``.
     """
 
     def __init__(self, config: S3BlockConfig) -> None:
+        """
+        Initialise the S3Block.
+
+        :param config: Configuration specifying dimensions and optional components.
+        """
         super().__init__()
         self.config = config
 
@@ -107,7 +80,8 @@ class S3Block(nn.Module):
         self.register_buffer("_state", None, persistent=False)
 
     def reset(self) -> None:
-        """Reset the internal state to ``None``.
+        """
+        Reset the internal state to ``None``.
 
         Calling this method before processing an independent sequence ensures
         that hidden states from previous sequences are discarded.
@@ -115,17 +89,11 @@ class S3Block(nn.Module):
         self._state = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Process a sequence through the Mamba block.
+        """
+        Process a sequence through the Mamba block.
 
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input of shape ``(L, B, d_model)``.
-
-        Returns
-        -------
-        torch.Tensor
-            Output of shape ``(L, B, d_model)``.
+        :param x: Input of shape ``(L, B, d_model)``.
+        :return: Output of shape ``(L, B, d_model)``.
         """
         L, B, D = x.shape
         assert D == self.config.d_model, (
@@ -198,18 +166,8 @@ class S3Block(nn.Module):
 
 
 class S3Encoder(nn.Module):
-    """A stack of Mamba blocks with optional residual connections.
-
-    Parameters
-    ----------
-    num_layers : int
-        Number of blocks to stack.
-    config : S3BlockConfig
-        Configuration for each block.
-    block_class : Type[nn.Module], optional
-        The block class to instantiate.  Must implement ``forward(x)``
-        taking ``(L, B, d_model)`` and returning the same shape, and a
-        ``reset`` method.  Defaults to ``MambaBlock``.
+    """
+    A stack of Mamba blocks with optional residual connections.
     """
 
     def __init__(
@@ -218,6 +176,13 @@ class S3Encoder(nn.Module):
         config: S3BlockConfig,
         block_class: Type[nn.Module] = S3Block,
     ) -> None:
+        """
+        Initialise the S3Encoder.
+
+        :param num_layers: Number of blocks to stack.
+        :param config: Configuration for each block.
+        :param block_class: The block class to instantiate. Defaults to S3Block.
+        """
         super().__init__()
         self.layers = nn.ModuleList(block_class(config) for _ in range(num_layers))
         self.config = config
@@ -229,17 +194,11 @@ class S3Encoder(nn.Module):
                 layer.reset()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Process input through the stack of Mamba blocks.
+        """
+        Process input through the stack of Mamba blocks.
 
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input of shape ``(L, B, d_model)``.
-
-        Returns
-        -------
-        torch.Tensor
-            Output of shape ``(L, B, d_model)``.
+        :param x: Input of shape ``(L, B, d_model)``.
+        :return: Output of shape ``(L, B, d_model)``.
         """
         for layer in self.layers:
             x_res = x
@@ -251,24 +210,8 @@ class S3Encoder(nn.Module):
 
 
 class VariationalS3Encoder(nn.Module):
-    """Variational encoder using a Mamba stack to infer latent MDP parameters.
-
-    This class wraps a ``MAMBAEncoder`` with embedding and projection heads
-    to produce mean and log‑variance parameters of a Gaussian latent
-    distribution.  It implements a ``prior`` method to compute the
-    distribution before observing any data, and uses the reparameterisation
-    trick to sample latent codes.
-
-    Parameters
-    ----------
-    input_dim : int
-        Dimension of the input features (concatenated action, state and reward).
-    embed_dim : int
-        Dimension of the embedding used as input to the Mamba encoder.
-    latent_dim : int
-        Dimension of the latent variable representing the MDP.
-    encoder : S3Encoder
-        Instance of a Mamba encoder that processes embedded sequences.
+    """
+    Variational encoder using a Mamba stack to infer latent MDP parameters.
     """
 
     def __init__(
@@ -278,6 +221,14 @@ class VariationalS3Encoder(nn.Module):
         latent_dim: int,
         encoder: S3Encoder,
     ) -> None:
+        """
+        Initialise the VariationalS3Encoder.
+
+        :param input_dim: Dimension of the input features (concatenated action, state and reward).
+        :param embed_dim: Dimension of the embedding used as input to the Mamba encoder.
+        :param latent_dim: Dimension of the latent variable representing the MDP.
+        :param encoder: Instance of a Mamba encoder that processes embedded sequences.
+        """
         super().__init__()
         self.input_dim = input_dim
         self.embed_dim = embed_dim
@@ -295,17 +246,11 @@ class VariationalS3Encoder(nn.Module):
         self.encoder.reset()
 
     def _encode_sequence(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Helper to embed and encode a sequence.
+        """
+        Helper to embed and encode a sequence.
 
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input sequence of shape ``(L, B, input_dim)``.
-
-        Returns
-        -------
-        Tuple[torch.Tensor, torch.Tensor]
-            The latent mean and log‑variance of shape ``(L, B, latent_dim)``.
+        :param x: Input sequence of shape ``(L, B, input_dim)``.
+        :return: A tuple containing the latent mean and log‑variance of shape ``(L, B, latent_dim)``.
         """
         # project to embed_dim
         h = self.embed(x)  # (L, B, embed_dim)
@@ -317,7 +262,13 @@ class VariationalS3Encoder(nn.Module):
         return mu, logvar
 
     def _sample_gaussian(self, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
-        """Draw samples from a Gaussian using the reparameterisation trick."""
+        """
+        Draw samples from a Gaussian using the reparameterisation trick.
+
+        :param mu: Mean of the Gaussian.
+        :param logvar: Log-variance of the Gaussian.
+        :return: A sampled tensor.
+        """
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return mu + eps * std
@@ -327,25 +278,12 @@ class VariationalS3Encoder(nn.Module):
         batch_size: int,
         sample: bool = True,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None]:
-        """Compute the prior latent distribution before seeing any data.
+        """
+        Compute the prior latent distribution before seeing any data.
 
-        This method resets the encoder, feeds a single timestep of zeros
-        through the model, and returns the resulting latent sample, mean
-        and log‑variance.  It then resets the encoder again so that
-        subsequent calls to ``forward`` start from a clean state.
-
-        Parameters
-        ----------
-        batch_size : int
-            Number of parallel latent priors to generate.
-        sample : bool, optional
-            Whether to draw a sample from the prior distribution or return
-            the mean.  Default is True.
-
-        Returns
-        -------
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
-            ``(z, mu, logvar)`` where each tensor has shape ``(1, B, latent_dim)``.
+        :param batch_size: Number of parallel latent priors to generate.
+        :param sample: Whether to draw a sample from the prior distribution. Default is True.
+        :return: A tuple ``(z, mu, logvar, None)`` where each tensor has shape ``(1, B, latent_dim)``.
         """
         # reset encoder to guarantee clean state
         self.reset()
@@ -372,29 +310,17 @@ class VariationalS3Encoder(nn.Module):
         sample=True,
         detach_every=None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None]:
-        """Encode a sequence of (action, state, reward) tuples to latent codes.
+        """
+        Encode a sequence of (action, state, reward) tuples to latent codes.
 
-        The input should be of shape ``(L, B, input_dim)``, where each
-        timestep contains the concatenated action, state and reward.
-        If ``return_prior`` is True, a prior distribution is prepended to
-        the outputs (length becomes ``L + 1``).  Otherwise, only the
-        posterior for each timestep is returned.
-
-        Parameters
-        ----------
-        actions_states_rewards : torch.Tensor
-            Sequence of inputs of shape ``(L, B, input_dim)``.
-        return_prior : bool, optional
-            If True, prepend the prior distribution to the outputs.  Default is False.
-        sample : bool, optional
-            If True, return samples from the posterior distribution.  If False,
-            return the means.  Default is True.
-
-        Returns
-        -------
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
-            ``(z, mu, logvar)`` where each has shape ``(L, B, latent_dim)``
-            or ``(L+1, B, latent_dim)`` if ``return_prior`` is True.
+        :param actions: Sequence of actions taken.
+        :param states: Sequence of states visited.
+        :param rewards: Sequence of rewards received.
+        :param hidden_state: Unused (maintained for API compatibility).
+        :param return_prior: If True, prepend the prior distribution to the outputs. Default is False.
+        :param sample: If True, return samples from the posterior. If False, return means. Default is True.
+        :param detach_every: Optional frequency to detach gradients for long sequences.
+        :return: A tuple ``(z, mu, logvar, None)`` containing the latents.
         """
 
         actions_states_rewards = torch.cat((actions, states, rewards), dim=-1)
