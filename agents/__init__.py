@@ -6,11 +6,11 @@ from .humplik_agent import HumplikAgent
 def build_agent(agent_name: str, config):
     """
     Factory function to build agents based on agent name.
-    
+
     Args:
         agent_name: Name of the agent to build
         config: Configuration namespace
-        
+
     Returns:
         Agent instance
     """
@@ -19,8 +19,8 @@ def build_agent(agent_name: str, config):
         "belief": BeliefAgent,
         "humplik": HumplikAgent,
     }
-    
+
     if agent_name not in agent_mapping:
         raise ValueError(f"Unknown agent: {agent_name}")
-        
+
     return agent_mapping[agent_name](config)

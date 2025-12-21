@@ -9,7 +9,7 @@ import torch.nn.functional as F
 class S3Agent(BaseAgent):
     """
     S3Agent implements the Selective State-Space Meta-Reinforcement Learning agent.
-    It uses a Mamba-based encoder for task inference and supports reward reconstruction 
+    It uses a Mamba-based encoder for task inference and supports reward reconstruction
     and contrastive task losses.
     """
 

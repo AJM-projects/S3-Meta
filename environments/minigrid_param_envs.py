@@ -2,15 +2,12 @@ from __future__ import annotations
 
 from typing import Any, Tuple
 import random
-import numpy as np
 from minigrid.core.grid import Grid
 from minigrid.core.world_object import Goal, Wall
 from minigrid.core.mission import MissionSpace
-from minigrid.manual_control import ManualControl
 from minigrid.minigrid_env import MiniGridEnv
 from minigrid.core.world_object import Door, Key
-from minigrid.core.actions import Actions
-from minigrid.core.world_object import Ball, Floor
+from minigrid.core.world_object import Ball
 
 
 class TwoGoalEnv(MiniGridEnv):
@@ -256,7 +253,6 @@ class KeyDoorTwoColorEnv(MiniGridEnv):
         return obs, reward, terminated, truncated, info
 
 
-
 class TemporalMemoryMazeEnv(MiniGridEnv):
     """
     TemporalMemoryMaze Environment for testing long-range temporal dependencies.
@@ -273,14 +269,13 @@ class TemporalMemoryMazeEnv(MiniGridEnv):
     """
 
     def __init__(
-            self,
-            size=15,
-            cue_mapping=None,  # Dict mapping cue colors to exit colors
-            maze_layout=0,  # Which maze variant to use
-            max_steps=200,
-            **kwargs
+        self,
+        size=15,
+        cue_mapping=None,  # Dict mapping cue colors to exit colors
+        maze_layout=0,  # Which maze variant to use
+        max_steps=200,
+        **kwargs,
     ):
-
         self.size = size
         self.cue_mapping = cue_mapping or {"red": "green", "blue": "yellow"}
         self.maze_layout = maze_layout
@@ -291,14 +286,14 @@ class TemporalMemoryMazeEnv(MiniGridEnv):
 
         # Available colors for cues and exits
         self.cue_colors = list(self.cue_mapping.keys())
-        self.exit_colors = list(self.cue_mapping.values()) + ["purple", "grey"]  # Add distractors
+        self.exit_colors = list(self.cue_mapping.values()) + [
+            "purple",
+            "grey",
+        ]  # Add distractors
 
         mission_space = MissionSpace(mission_func=self._gen_mission)
         super().__init__(
-            mission_space=mission_space,
-            grid_size=size,
-            max_steps=max_steps,
-            **kwargs
+            mission_space=mission_space, grid_size=size, max_steps=max_steps, **kwargs
         )
 
     @staticmethod
@@ -386,7 +381,7 @@ class TemporalMemoryMazeEnv(MiniGridEnv):
             # Go down
             *[(7, y) for y in range(4, 11)],
             # Go right to exit
-            *[(x, 11) for x in range(8, 12)]
+            *[(x, 11) for x in range(8, 12)],
         ]
 
         for i, (x, y) in enumerate(path_coords):
@@ -411,7 +406,7 @@ class TemporalMemoryMazeEnv(MiniGridEnv):
         # Place cue objects - these indicate the correct exit
         cue_positions = [(x + 1, y + 1), (x + width - 2, y + 1)]
 
-        for i, pos in enumerate(cue_positions[:len(self.cue_colors)]):
+        for i, pos in enumerate(cue_positions[: len(self.cue_colors)]):
             cue_color = self.cue_colors[i % len(self.cue_colors)]
             cue_obj = Key(cue_color) if i % 2 == 0 else Ball(cue_color)
             self.grid.set(pos[0], pos[1], cue_obj)
@@ -427,10 +422,10 @@ class TemporalMemoryMazeEnv(MiniGridEnv):
         exit_positions = [
             (x + 1, y + height - 1),
             (x + width - 2, y + height - 1),
-            (x + width // 2, y + height - 1)
+            (x + width // 2, y + height - 1),
         ]
 
-        for i, pos in enumerate(exit_positions[:len(self.exit_colors)]):
+        for i, pos in enumerate(exit_positions[: len(self.exit_colors)]):
             exit_color = self.exit_colors[i % len(self.exit_colors)]
             exit_color = self.exit_colors[i]
             self.grid.set(pos[0], pos[1], Goal(color=exit_color))
@@ -453,31 +448,39 @@ class TemporalMemoryMazeEnv(MiniGridEnv):
         if self.phase == "cue":
             fwd_pos = self.front_pos
             fwd_cell = self.grid.get(*fwd_pos)
-            if fwd_cell and hasattr(fwd_cell, 'color') and fwd_cell.color in self.cue_colors:
+            if (
+                fwd_cell
+                and hasattr(fwd_cell, "color")
+                and fwd_cell.color in self.cue_colors
+            ):
                 if fwd_cell.color not in self.cues_seen:
                     self.cues_seen.append(fwd_cell.color)
                     # Determine correct exit color based on first cue seen
                     if not self.correct_exit_color:
-                        self.correct_exit_color = self.cue_mapping.get(fwd_cell.color, "purple")
+                        self.correct_exit_color = self.cue_mapping.get(
+                            fwd_cell.color, "purple"
+                        )
 
         obs, reward, terminated, truncated, info = super().step(action)
 
         # Custom reward logic
-        if terminated and hasattr(self, 'goal_reached'):
+        if terminated and hasattr(self, "goal_reached"):
             goal_obj = self.grid.get(*self.agent_pos)
-            if goal_obj and hasattr(goal_obj, 'color'):
+            if goal_obj and hasattr(goal_obj, "color"):
                 if goal_obj.color == self.correct_exit_color:
                     reward = 1.0  # Correct exit
                 else:
                     reward = -0.5  # Wrong exit
 
         # Add phase and memory info
-        info.update({
-            'phase': self.phase,
-            'cues_seen': self.cues_seen.copy(),
-            'correct_exit_color': self.correct_exit_color,
-            'steps_in_phase': self._get_steps_in_phase()
-        })
+        info.update(
+            {
+                "phase": self.phase,
+                "cues_seen": self.cues_seen.copy(),
+                "correct_exit_color": self.correct_exit_color,
+                "steps_in_phase": self._get_steps_in_phase(),
+            }
+        )
 
         return obs, reward, terminated, truncated, info
 

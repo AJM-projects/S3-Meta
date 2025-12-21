@@ -39,5 +39,6 @@ def train_agent(
         model.learn(total_timesteps=config.total_timesteps, callback=callbacks)
         gc.collect()
 
+
 if __name__ == "__main__":
     train_agent(env_name="CheetahDir", agent_name="S3_Meta", num_experiment=1)

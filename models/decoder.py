@@ -236,7 +236,6 @@ class TaskDecoder(nn.Module):
             self.criterion = nn.MSELoss(reduction="none")
         else:
             self.criterion = nn.MSELoss(reduction="sum")
-            # self.criterion = nn.L1Loss()
 
     def forward(self, latent_state):
         """

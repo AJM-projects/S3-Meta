@@ -162,9 +162,6 @@ class RNNEncoder(nn.Module):
         In the latter case, we return embeddings of length sequence_len+1 since they include the prior.
         """
 
-        # we do the action-normalisation (the env bounds) here
-        # actions = utl.squash_action(actions, self.args)
-
         # shape should be: sequence_len x batch_size x hidden_size
         actions = actions.reshape((-1, *actions.shape[-2:]))
         states = states.reshape((-1, *states.shape[-2:]))

@@ -94,8 +94,17 @@ class AgentCallback(BaseCallback):
             episode_infos = self.buffer.infos[start_idx : end_idx + 1]
 
             # Convert discrete actions to one-hot for discrete-action environments
-            if self.args.env_name in ["MAB", "MAB10", "ResourceForaging", "MiniGridTwoGoal", "MiniGridKeyDoor",
-                                      "MiniGridMemory", "DelayedSignal", "TemporalMaze", "DelayedMAB"]:
+            if self.args.env_name in [
+                "MAB",
+                "MAB10",
+                "ResourceForaging",
+                "MiniGridTwoGoal",
+                "MiniGridKeyDoor",
+                "MiniGridMemory",
+                "DelayedSignal",
+                "TemporalMaze",
+                "DelayedMAB",
+            ]:
                 # Ensure episode_action is the right shape (flatten if needed)
                 if episode_action.dim() > 1:
                     episode_action = episode_action.squeeze(-1)
@@ -104,12 +113,16 @@ class AgentCallback(BaseCallback):
                     # Env action space is n_bandits + 1 (extra "wait" action)
                     # The VAE expects an action vector of length n_bandits; map "wait" to all-zeros
                     total_actions = int(self.args.n_bandits) + 1
-                    one_hot = F.one_hot(episode_action.long(), num_classes=total_actions).float()
+                    one_hot = F.one_hot(
+                        episode_action.long(), num_classes=total_actions
+                    ).float()
                     # Drop the last column (wait) so shape == n_bandits
                     episode_action = one_hot[..., : int(self.args.n_bandits)]
                 else:
                     n_classes = int(self.args.action_dim)
-                    episode_action = F.one_hot(episode_action.long(), num_classes=n_classes).float()
+                    episode_action = F.one_hot(
+                        episode_action.long(), num_classes=n_classes
+                    ).float()
 
             unique_items = set(str(x) for x in episode_infos)
             assert len(unique_items) == 1
@@ -329,7 +342,6 @@ class EvaluationCallback(EventCallback):
 
 
 def create_agent_callbacks(agent, config, test_environment):
-
     callback = AgentCallback(agent, config)
     test_callback = EvaluationCallback(
         eval_env=test_environment, envs_name="test_envs", verbose=0

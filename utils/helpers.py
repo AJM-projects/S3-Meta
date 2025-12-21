@@ -172,11 +172,6 @@ def recompute_embeddings(policy_storage, encoder, sample, update_idx, detach_eve
             detach_every=detach_every,
         )
 
-        # print(i, reset_task.sum())
-        # print(i, (policy_storage.latent_mean[i + 1] - tm).sum())
-        # print(i, (policy_storage.latent_logvar[i + 1] - tl).sum())
-        # print(i, (policy_storage.hidden_states[i + 1] - h).sum())
-
         latent_sample.append(ts)
         latent_mean.append(tm)
         latent_logvar.append(tl)

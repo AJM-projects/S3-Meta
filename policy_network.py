@@ -143,8 +143,6 @@ class PPOWithInfo(PPO):
                     with th.no_grad():
                         terminal_value = self.policy.predict_values(terminal_obs)[0]  # type: ignore[arg-type]
                     rewards[idx] += self.gamma * terminal_value
-            # if max(max(actions)) > 1 or min(min(actions)) < -1:
-            #     print()
             rollout_buffer.add(
                 self._last_obs,  # type: ignore[arg-type]
                 actions,
