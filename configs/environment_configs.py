@@ -10,7 +10,7 @@ from configs.task_generators import (
     generate_mab_n_tasks,
     generate_resource_foraging_tasks,
     generate_temporal_maze_tasks,
-    generate_delayed_mab_tasks
+    generate_delayed_mab_tasks,
 )
 
 # Set seeds for reproducible task generation
@@ -20,9 +20,13 @@ np.random.seed(123)
 cheetah_test_all = [np.random.uniform(0.5, 3) for _ in range(5)]
 
 np.random.seed(42)
-swimmer_train_all = [(np.random.uniform(-10, 10), np.random.uniform(0, 1)) for _ in range(50)]
+swimmer_train_all = [
+    (np.random.uniform(-10, 10), np.random.uniform(0, 1)) for _ in range(50)
+]
 np.random.seed(123)
-swimmer_test_all = [(np.random.uniform(-10, 10), np.random.uniform(0, 1)) for _ in range(5)]
+swimmer_test_all = [
+    (np.random.uniform(-10, 10), np.random.uniform(0, 1)) for _ in range(5)
+]
 
 minigrid_twogoal_train = generate_twogoal_tasks(num_tasks=60, seed=42)
 minigrid_twogoal_test = generate_twogoal_tasks(num_tasks=20, seed=123)
@@ -355,7 +359,6 @@ DelayedMAB_config = {
     "input_prev_state": True,
     "vae_buffer_size": 50,
 }
-
 
 
 ENVIRONMENT_CONFIGS = {

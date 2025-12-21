@@ -76,7 +76,9 @@ def generate_mab_n_tasks(num_tasks=20, n_bandits=5, seed=42):
     return tasks
 
 
-def generate_resource_foraging_tasks(num_tasks=30, n_patches=4, task_param_dim=4, seed=42):
+def generate_resource_foraging_tasks(
+    num_tasks=30, n_patches=4, task_param_dim=4, seed=42
+):
     """Generate diverse tasks for Resource Foraging environment."""
     np.random.seed(seed)
     tasks = []
@@ -145,7 +147,7 @@ def generate_temporal_maze_tasks(num_tasks=40, seed=42):
             float(exit1_idx),
             float(cue2_idx),
             float(exit2_idx),
-            float(maze_layout)
+            float(maze_layout),
         ]
         tasks.append(task_params)
 
@@ -176,7 +178,9 @@ def generate_delayed_mab_tasks(num_tasks=40, n_bandits=5, seed=42):
         base_payoffs = np.random.uniform(1.0, 5.0, n_bandits)
 
         # Generate multipliers (signal 2) - mix of positive and negative
-        multipliers = np.random.choice([-2, -1, 1, 2], n_bandits, p=[0.2, 0.3, 0.3, 0.2])
+        multipliers = np.random.choice(
+            [-2, -1, 1, 2], n_bandits, p=[0.2, 0.3, 0.3, 0.2]
+        )
 
         # Ensure there's variety in which arm is optimal at different stages
         if i % 3 == 0:

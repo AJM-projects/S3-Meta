@@ -259,8 +259,6 @@ def evaluate_policy(
             all_episode_obs.append(observations[:2])
             all_episode_rewards.append(rewards)
 
-    # if task is not None:
-    #     vis_point_mass(all_episode_obs, all_episode_rewards, task)
     mean_reward = np.mean(episode_rewards)
     std_reward = np.std(episode_rewards)
     if reward_threshold is not None:

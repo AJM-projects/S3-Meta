@@ -85,8 +85,6 @@ class TI_Buffer:
                 f.write(f"- **Episode lengths**: {episode_lengths}\n")
                 f.write(f"- **Total rewards per episode**: {episode_rewards}\n")
 
-            # print(f"Buffer saved at {file_path} with metadata in {md_file_path}")
-
         th.save(self.buffer, file_path)
 
     def load(self, file_path):

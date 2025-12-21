@@ -25,7 +25,10 @@ import numpy as np
 from gymnasium import spaces
 
 from environments.bamdpdeepmind import BamdpDeepmind
-from environments.minigrid_param_envs import KeyDoorTwoColorEnv, TwoGoalEnv, TemporalMemoryMazeEnv
+from environments.minigrid_param_envs import (
+    KeyDoorTwoColorEnv,
+    TwoGoalEnv,
+)
 
 
 class BamdpMinigridBase(BamdpDeepmind):
@@ -336,21 +339,23 @@ class BamdpTemporalMemoryMaze(BamdpMinigridBase):
         base_reward = reward
 
         # Phase-based reward shaping
-        phase = info.get('phase', 'cue')
+        phase = info.get("phase", "cue")
 
-        if phase == 'cue':
+        if phase == "cue":
             # Small reward for observing cues
-            if len(info.get('cues_seen', [])) > len(getattr(self, '_prev_cues_seen', [])):
+            if len(info.get("cues_seen", [])) > len(
+                getattr(self, "_prev_cues_seen", [])
+            ):
                 base_reward += 0.1
-        elif phase == 'navigate':
+        elif phase == "navigate":
             # Small penalty to encourage efficient navigation
             base_reward -= 0.01
-        elif phase == 'decision':
+        elif phase == "decision":
             # Main reward comes from correct exit choice
             # This is handled by the base environment
             pass
 
         # Store previous state for comparison
-        self._prev_cues_seen = info.get('cues_seen', [])
+        self._prev_cues_seen = info.get("cues_seen", [])
 
         return base_reward

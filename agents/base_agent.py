@@ -13,6 +13,11 @@ from models.task_inference_buffer import TI_Buffer
 
 class BaseAgent(nn.Module):
     def __init__(self, config: Namespace):
+        """
+        Initialise the base agent with configuration parameters.
+
+        :param config: Namespace containing agent and environment hyperparameters.
+        """
         super(BaseAgent, self).__init__()
         self.args: Namespace = config
         self.latent_dim: int = config.latent_dim
@@ -37,7 +42,9 @@ class BaseAgent(nn.Module):
 
     def compute_vae_loss(self):
         """
-        Compute the loss of the VAE
+        Compute the loss of the VAE (Variational Autoencoder) and update its parameters.
+
+        :return: A dictionary containing the computed losses (task_loss, reward_loss, kl_loss, contrastive_loss).
         """
         _elbo_loss, reward_loss, task_loss, kl_loss, contrastive_loss = 0, 0, 0, 0, 0
 
@@ -106,6 +113,13 @@ class BaseAgent(nn.Module):
         return infos
 
     def get_kl_loss(self, latent_mean, latent_logvar) -> torch.Tensor:
+        """
+        Compute the KL divergence loss between consecutive latents in a sequence.
+
+        :param latent_mean: Mean of the latent distribution.
+        :param latent_logvar: Log-variance of the latent distribution.
+        :return: The total KL divergence loss.
+        """
         # Unpack dimensions: T = number of timesteps, B = batch size, D = latent dimension.
         T, B, D = latent_mean.shape
 
@@ -144,9 +158,27 @@ class BaseAgent(nn.Module):
         task_labels: torch.Tensor,
         temperature: float = 0.1,
     ) -> torch.Tensor:
+        """
+        Compute the contrastive loss for task inference.
+
+        :param latent_mean: Mean of the latent distribution.
+        :param states: Observations from the environment.
+        :param actions: Actions taken by the agent.
+        :param rewards: Rewards received from the environment.
+        :param task_labels: Ground truth task labels (if available).
+        :param temperature: Temperature parameter for the contrastive loss.
+        :return: The contrastive task loss.
+        """
         raise NotImplementedError
 
     def get_task_reconstruction_loss(self, latent_samples, vae_tasks) -> torch.Tensor:
+        """
+        Compute the task reconstruction loss using the task decoder.
+
+        :param latent_samples: Samples from the latent distribution.
+        :param vae_tasks: Ground truth task parameters.
+        :return: The task reconstruction loss.
+        """
         task_preds = self.task_decoder(latent_samples[:-1, :, :])
         task_reconstruction_loss = self.task_decoder.get_loss(task_preds, vae_tasks)
         return task_reconstruction_loss
@@ -154,6 +186,16 @@ class BaseAgent(nn.Module):
     def get_reward_recon_loss(
         self, vae_prev_obs, vae_actions, vae_next_obs, latent_samples, vae_rewards
     ) -> torch.Tensor:
+        """
+        Compute the reward reconstruction loss using the reward decoder.
+
+        :param vae_prev_obs: Previous observations.
+        :param vae_actions: Actions taken.
+        :param vae_next_obs: Next observations.
+        :param latent_samples: Samples from the latent distribution.
+        :param vae_rewards: Ground truth rewards.
+        :return: The reward reconstruction loss.
+        """
         num_elbos = latent_samples.shape[0]
         num_decodes = vae_prev_obs.shape[0]
         dec_prev_obs = vae_prev_obs.unsqueeze(0).expand(
@@ -186,7 +228,11 @@ class BaseAgent(nn.Module):
         return rew_reconstruction_loss
 
     def initialise_decoder(self):
-        """Initialises and returns the (state/reward/task) decoder as specified in self.args"""
+        """
+        Initialise and return the reward and task decoders as specified in configuration.
+
+        :return: A tuple (reward_decoder, task_decoder).
+        """
         reward_decoder, task_decoder = None, None
         latent_dim = self.args.latent_dim
 
@@ -246,6 +292,11 @@ class BaseAgent(nn.Module):
         return reward_decoder, task_decoder
 
     def initialise_encoder(self):
+        """
+        Initialise and return the encoder for task inference.
+
+        :return: An encoder instance (e.g., RNNEncoder).
+        """
         encoder = RNNEncoder(
             args=self.args,
             layers_before_gru=self.args.encoder_layers_before_gru,
@@ -263,14 +314,18 @@ class BaseAgent(nn.Module):
         return encoder
 
     def get_optimiser(self):
+        """
+        Initialise and return the optimiser for the VAE.
+
+        :return: A torch.optim.Adam optimiser instance.
+        """
         return torch.optim.Adam(self.parameters(), lr=self.args.lr)
 
     def save_model(self, path: str):
         """
         Save the model's state dictionary to the specified path.
 
-        Args:
-            path (str): The file path to save the model.
+        :param path: The file path where the model should be saved.
         """
         save_dict = {
             "encoder": self.encoder.state_dict(),
@@ -289,6 +344,7 @@ class BaseAgent(nn.Module):
     def get_kl_sequence(latent_mean, latent_logvar):
         """
         Compute the KL divergence between the prior and the approximate posterior for each timestep in the sequence.
+
         :param latent_mean: The mean of the approximate posterior.
         :param latent_logvar: The log-variance of the approximate posterior.
         :return: The KL divergence for each timestep in the sequence.

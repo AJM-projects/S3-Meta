@@ -94,8 +94,17 @@ class AgentCallback(BaseCallback):
             episode_infos = self.buffer.infos[start_idx : end_idx + 1]
 
             # Convert discrete actions to one-hot for discrete-action environments
-            if self.args.env_name in ["MAB", "MAB10", "ResourceForaging", "MiniGridTwoGoal", "MiniGridKeyDoor",
-                                      "MiniGridMemory", "DelayedSignal", "TemporalMaze", "DelayedMAB"]:
+            if self.args.env_name in [
+                "MAB",
+                "MAB10",
+                "ResourceForaging",
+                "MiniGridTwoGoal",
+                "MiniGridKeyDoor",
+                "MiniGridMemory",
+                "DelayedSignal",
+                "TemporalMaze",
+                "DelayedMAB",
+            ]:
                 # Ensure episode_action is the right shape (flatten if needed)
                 if episode_action.dim() > 1:
                     episode_action = episode_action.squeeze(-1)
@@ -104,12 +113,16 @@ class AgentCallback(BaseCallback):
                     # Env action space is n_bandits + 1 (extra "wait" action)
                     # The VAE expects an action vector of length n_bandits; map "wait" to all-zeros
                     total_actions = int(self.args.n_bandits) + 1
-                    one_hot = F.one_hot(episode_action.long(), num_classes=total_actions).float()
+                    one_hot = F.one_hot(
+                        episode_action.long(), num_classes=total_actions
+                    ).float()
                     # Drop the last column (wait) so shape == n_bandits
                     episode_action = one_hot[..., : int(self.args.n_bandits)]
                 else:
                     n_classes = int(self.args.action_dim)
-                    episode_action = F.one_hot(episode_action.long(), num_classes=n_classes).float()
+                    episode_action = F.one_hot(
+                        episode_action.long(), num_classes=n_classes
+                    ).float()
 
             unique_items = set(str(x) for x in episode_infos)
             assert len(unique_items) == 1
@@ -140,7 +153,7 @@ class AgentCallback(BaseCallback):
         self.agent.save_model(save_path)
 
 
-class RigourEvalCallback(EventCallback):
+class EvaluationCallback(EventCallback):
     def __init__(
         self,
         eval_env: Union[gym.Env, VecEnv],
@@ -286,30 +299,7 @@ class RigourEvalCallback(EventCallback):
                 np.std(task_mean_rewards),
             )
 
-            # mean_ep_length, std_ep_length = np.mean(episode_lengths), np.std(episode_lengths)
             self.last_mean_reward = float(mean_reward)
-
-            # if self.verbose >= 1:
-            #     print(f"Eval num_timesteps={self.num_timesteps}, " f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
-            #     print(f"Episode length: {mean_ep_length:.2f} +/- {std_ep_length:.2f}")
-            # # Add to current Logger
-            # if self.envs_name is not None:
-            #     self.logger.record(f"{self.envs_name}/mean_reward", float(mean_reward))
-            #     self.logger.record(f"{self.envs_name}/max_reward", float(np.mean(task_max_rewards)))
-            #     # self.logger.record(f"{self.envs_name}/mean_ep_length", mean_ep_length)
-            #     # self.logger.record(f"{self.envs_name}/ep_rewards", episode_rewards)
-            # else:
-            #     if self.name is not None:
-            #         self.logger.record(f"eval/mean_reward_{self.name}", float(mean_reward))
-            #         self.logger.record(f"eval/max_reward_{self.name}", float(max(episode_rewards)))
-            #
-            #         self.logger.record(f"eval/mean_ep_length_{self.name}", mean_ep_length)
-            #         self.logger.record(f"eval/ep_rewards_{self.name}", episode_rewards)
-            #     else:
-            #         self.logger.record("eval/mean_reward", float(mean_reward))
-            #         self.logger.record("eval/max_reward", float(max(episode_rewards)))
-            #         self.logger.record("eval/mean_ep_length", mean_ep_length)
-            #         self.logger.record("eval/ep_rewards", episode_rewards)
 
             if len(self._is_success_buffer) > 0:
                 success_rate = np.mean(self._is_success_buffer)
@@ -351,18 +341,9 @@ class RigourEvalCallback(EventCallback):
             self.callback.update_locals(locals_)
 
 
-def create_agent_callbacks(agent, agent_name, config, test_environment):
-    if agent_name == "naive":
-        return RigourEvalCallback(
-            eval_env=test_environment, envs_name="test_envs", verbose=0
-        )
-    if agent_name == "oracle":
-        return RigourEvalCallback(
-            eval_env=test_environment, envs_name="test_envs", verbose=0
-        )
-
+def create_agent_callbacks(agent, config, test_environment):
     callback = AgentCallback(agent, config)
-    test_callback = RigourEvalCallback(
+    test_callback = EvaluationCallback(
         eval_env=test_environment, envs_name="test_envs", verbose=0
     )
     callbacks = CallbackList([callback, test_callback])

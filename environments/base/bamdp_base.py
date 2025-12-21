@@ -11,7 +11,7 @@ import torch as th
 class BamdpBase(gym.Wrapper):
     """
     Base class for BAMDP environment wrappers.
-    
+
     Wraps environments to augment observations with VAE beliefs,
     handles both sample generation and VAE.
     """

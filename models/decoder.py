@@ -20,6 +20,19 @@ class RewardDecoderProbabilistic(nn.Module):
         input_prev_state=True,
         input_action=True,
     ):
+        """
+        Initialise a probabilistic reward decoder.
+
+        :param args: Namespace containing hyperparameters.
+        :param layers: List of layer sizes for the decoder MLP.
+        :param latent_dim: Dimension of the latent task representation.
+        :param action_dim: Dimension of the action space.
+        :param action_embed_dim: Dimension of action embeddings.
+        :param state_dim: Dimension of the state space.
+        :param state_embed_dim: Dimension of state embeddings.
+        :param input_prev_state: If True, include previous state in the input.
+        :param input_action: If True, include action in the input.
+        """
         super(RewardDecoderProbabilistic, self).__init__()
 
         self.args = args
@@ -49,6 +62,15 @@ class RewardDecoderProbabilistic(nn.Module):
         self.fc_logvar = nn.Linear(curr_input_dim, 1)
 
     def forward(self, latent_state, next_state, prev_state=None, actions=None):
+        """
+        Forward pass of the probabilistic reward decoder.
+
+        :param latent_state: Latent task representation.
+        :param next_state: Next state observation.
+        :param prev_state: Previous state observation (optional).
+        :param actions: Actions taken (optional).
+        :return: A tuple (mean, logvar) of predicted reward distribution.
+        """
         hns = self.state_encoder(next_state)
         h = torch.cat((latent_state, hns), dim=-1)
         if self.input_action:
@@ -64,6 +86,13 @@ class RewardDecoderProbabilistic(nn.Module):
         return self.fc_mean(h), self.fc_logvar(h)
 
     def get_loss(self, pred_reward, reward_labels):
+        """
+        Compute Gaussian negative log-likelihood loss for reward prediction.
+
+        :param pred_reward: Tuple (mean, logvar) from forward pass.
+        :param reward_labels: Ground truth rewards.
+        :return: Summed NLL loss.
+        """
         mean, logvar = pred_reward
         var = torch.exp(logvar)
 
@@ -88,6 +117,22 @@ class RewardDecoder(nn.Module):
         input_prev_state=True,
         input_action=True,
     ):
+        """
+        Initialise a deterministic reward decoder.
+
+        :param args: Namespace containing hyperparameters.
+        :param layers: List of layer sizes for the decoder MLP.
+        :param latent_dim: Dimension of the latent task representation.
+        :param action_dim: Dimension of the action space.
+        :param action_embed_dim: Dimension of action embeddings.
+        :param state_dim: Dimension of the state space.
+        :param state_embed_dim: Dimension of state embeddings.
+        :param num_states: Unused (legacy).
+        :param multi_head: If True, uses only latent_state as input.
+        :param pred_type: Type of prediction (deterministic or gaussian).
+        :param input_prev_state: If True, include previous state in the input.
+        :param input_action: If True, include action in the input.
+        """
         super(RewardDecoder, self).__init__()
 
         self.args = args
@@ -123,6 +168,15 @@ class RewardDecoder(nn.Module):
             self.fc_out = nn.Linear(curr_input_dim, 1)
 
     def forward(self, latent_state, next_state, prev_state=None, actions=None):
+        """
+        Forward pass of the reward decoder.
+
+        :param latent_state: Latent task representation.
+        :param next_state: Next state observation.
+        :param prev_state: Previous state observation (optional).
+        :param actions: Actions taken (optional).
+        :return: Predicted reward.
+        """
         # we do the action-normalisation (the env bounds) here
         if actions is not None:
             actions = utl.squash_action(actions, self.args)
@@ -155,6 +209,16 @@ class TaskDecoder(nn.Module):
         num_tasks,
         time_weighted_loss,
     ):
+        """
+        Initialise a task decoder.
+
+        :param layers: List of layer sizes for the decoder MLP.
+        :param latent_dim: Dimension of the latent task representation.
+        :param pred_type: Prediction target type ('task_description' or 'task_id').
+        :param task_dim: Dimension of the task description (if applicable).
+        :param num_tasks: Number of unique tasks (if applicable).
+        :param time_weighted_loss: If True, applies linear weighting to the loss across timesteps.
+        """
         super(TaskDecoder, self).__init__()
 
         # "task_description" or "task id"
@@ -172,9 +236,14 @@ class TaskDecoder(nn.Module):
             self.criterion = nn.MSELoss(reduction="none")
         else:
             self.criterion = nn.MSELoss(reduction="sum")
-            # self.criterion = nn.L1Loss()
 
     def forward(self, latent_state):
+        """
+        Forward pass of the task decoder.
+
+        :param latent_state: Latent task representation.
+        :return: Predicted task description or task ID.
+        """
         h = latent_state
 
         for layer in self.fc_layers:
@@ -183,8 +252,13 @@ class TaskDecoder(nn.Module):
         return self.fc_out(h)
 
     def get_loss(self, task, task_pred):
-        """Compute task reconstruction loss.
-        (No reduction of loss along batch dimension is done here; sum/avg has to be done outside)"""
+        """
+        Compute task reconstruction loss.
+
+        :param task: Ground truth task parameters.
+        :param task_pred: Predicted task parameters.
+        :return: The computed loss.
+        """
         if self.time_weighted_loss:
             loss = self.criterion(task_pred.float(), task)
             sequence_length = len(loss)  # Avoid div by zero
@@ -210,12 +284,12 @@ class TaskDecoderProbabilistic(nn.Module):
         """
         Probabilistic Task Decoder: Outputs a mean and log variance instead of a deterministic task prediction.
 
-        Args:
-            layers (list): List of layer sizes for the feedforward network.
-            latent_dim (int): Dimensionality of the latent state input.
-            pred_type (str): 'task_description' or 'task_id', determines output size.
-            task_dim (int): Dimensionality of the task representation (if 'task_description').
-            num_tasks (int): Number of tasks (if 'task_id').
+        :param layers: List of layer sizes for the feedforward network.
+        :param latent_dim: Dimensionality of the latent state input.
+        :param pred_type: 'task_description' or 'task_id', determines output size.
+        :param task_dim: Dimensionality of the task representation (if 'task_description').
+        :param num_tasks: Number of tasks (if 'task_id').
+        :param time_weighted_loss: If True, applies time-based weighting to the loss.
         """
         super(TaskDecoderProbabilistic, self).__init__()
 
@@ -239,12 +313,8 @@ class TaskDecoderProbabilistic(nn.Module):
         """
         Forward pass through the network.
 
-        Args:
-            latent_state (Tensor): Input latent state of shape (..., latent_dim).
-
-        Returns:
-            mean (Tensor): Predicted mean task representation (same shape as task_dim).
-            logvar (Tensor): Predicted log variance.
+        :param latent_state: Input latent state of shape (..., latent_dim).
+        :return: A tuple (mean, logvar) where each is a Tensor.
         """
         h = latent_state
 
@@ -260,12 +330,9 @@ class TaskDecoderProbabilistic(nn.Module):
         """
         Computes the Gaussian negative log-likelihood (NLL) loss.
 
-        Args:
-            pred_task (tuple): Output from forward() -> (mean, logvar)
-            task_labels (Tensor): True task labels of shape (..., task_dim).
-
-        Returns:
-            loss (Tensor): Computed NLL loss.
+        :param pred_task: Output from forward() -> (mean, logvar).
+        :param task_labels: True task labels.
+        :return: Computed NLL loss.
         """
         mean, logvar = pred_task  # Unpack predicted mean and logvar
 
@@ -295,6 +362,18 @@ class StateTransitionDecoder(nn.Module):
         state_embed_dim,
         pred_type="deterministic",
     ):
+        """
+        Initialise a state transition decoder.
+
+        :param args: Namespace containing hyperparameters.
+        :param layers: List of layer sizes for the decoder MLP.
+        :param latent_dim: Dimension of the latent task representation.
+        :param action_dim: Dimension of the action space.
+        :param action_embed_dim: Dimension of action embeddings.
+        :param state_dim: Dimension of the state space.
+        :param state_embed_dim: Dimension of state embeddings.
+        :param pred_type: Type of prediction (deterministic or gaussian).
+        """
         super(StateTransitionDecoder, self).__init__()
 
         self.args = args
@@ -319,6 +398,14 @@ class StateTransitionDecoder(nn.Module):
             self.fc_out = nn.Linear(curr_input_dim, state_dim)
 
     def forward(self, latent_state, state, actions):
+        """
+        Forward pass of the state transition decoder.
+
+        :param latent_state: Latent task representation.
+        :param state: Current state observation.
+        :param actions: Actions taken.
+        :return: Predicted next state or state distribution.
+        """
         # we do the action-normalisation (the the env bounds) here
         actions = utl.squash_action(actions, self.args)
 

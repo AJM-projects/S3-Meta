@@ -35,10 +35,10 @@ def train_agent(
         )
 
         print(f"tensorboard --logdir {model.tensorboard_log}")
-        callbacks = create_agent_callbacks(agent, agent_name, config, test_environment)
+        callbacks = create_agent_callbacks(agent, config, test_environment)
         model.learn(total_timesteps=config.total_timesteps, callback=callbacks)
         gc.collect()
 
-envs = ["CheetahDir", "MiniGridTwoGoal", "MiniGridKeyDoor", "CheetahVel", ("point_mass", "easy"), "TemporalMaze", "DelayedMAB"]
+
 if __name__ == "__main__":
-    train_agent(env_name=envs[-1], agent_name="S3_Meta", num_experiment=1)
+    train_agent(env_name="CheetahDir", agent_name="S3_Meta", num_experiment=1)

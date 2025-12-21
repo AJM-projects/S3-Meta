@@ -8,7 +8,7 @@ from environments.base.bamdp_base import BamdpBase
 class BamdpDeepmind(BamdpBase):
     """
     DeepMind-specific BAMDP wrapper implementation.
-    
+
     Overrides specific methods for DeepMind Control Suite environments.
     """
 
@@ -63,7 +63,6 @@ class BamdpDeepmind(BamdpBase):
         augmented_obs = np.concatenate([next_obs, belief])
 
         # Update internal state tracking.
-        # self.last_obs = augmented_obs
         self.previous_obs = next_obs
         self.previous_action = action
         info["current_env_params"] = self.current_env_params
@@ -97,8 +96,6 @@ class BamdpDeepmind(BamdpBase):
 
     def load_vae(self, vae):
         self.vae = vae
-
-
 
 
 class BamdpCheetahRun(BamdpDeepmind):
@@ -144,15 +141,11 @@ class BamdpCheetahRun(BamdpDeepmind):
             self.current_timestep = 0
             terminated = True
             truncated = True
-        # Optional: print a warning if the action is out of bounds.
-        # if np.max(action) > 1 or np.min(action) < -1:
-        #     print("Action out of bounds:", action)
 
         belief = self.update_encoding(next_obs, action, reward)
         augmented_obs = np.concatenate([next_obs, belief])
 
         # Update internal state tracking.
-        # self.last_obs = augmented_obs
         self.previous_obs = next_obs
         self.previous_action = action
         info["current_env_params"] = self.current_env_params
@@ -239,8 +232,8 @@ class BamdpDelayedMAB(BamdpDeepmind):
         self.current_env_params = np.array(task)
 
         # Extract task components
-        base_payoffs = self.current_env_params[:self.n_bandits]
-        multipliers = self.current_env_params[self.n_bandits:self.n_bandits * 2]
+        base_payoffs = self.current_env_params[: self.n_bandits]
+        multipliers = self.current_env_params[self.n_bandits : self.n_bandits * 2]
 
         # Set parameters in the underlying environment
         self.env.set_task_params(base_payoffs, multipliers)
@@ -263,5 +256,3 @@ class BamdpDelayedMAB(BamdpDeepmind):
         The base environment handles all the 5-phase temporal logic.
         """
         return reward
-
-
