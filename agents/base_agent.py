@@ -26,7 +26,7 @@ class BaseAgent(nn.Module):
             if hasattr(config, "vae_buffer_size")
             else 150,
         )
-        self.kl_weight: float = 0.1
+        self.kl_weight: float = getattr(config, "kl_weight", 0.1)
         self.decode_reward: bool = config.decode_reward
         self.decode_task: bool = config.decode_task
         self.contrastive_task_loss: bool = config.contrastive_task_loss
@@ -38,7 +38,9 @@ class BaseAgent(nn.Module):
         self.encoder = self.initialise_encoder()
         self.optimiser = self.get_optimiser()
         self.truncate_size = config.truncate_size
-        self.reward_weight, self.task_weight, self.contrastive_weight = 1, 1, 1
+        self.reward_weight = getattr(config, "reward_weight", 1.0)
+        self.task_weight = getattr(config, "task_weight", 1.0)
+        self.contrastive_weight = getattr(config, "contrastive_weight", 1.0)
 
     def compute_vae_loss(self):
         """

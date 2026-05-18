@@ -56,7 +56,7 @@ def build_environment(env_name, agent, config, tasks):
                 env = ResourceForagingEnv(
                     grid_size=config.grid_size,
                     n_patches=config.n_patches,
-                    task_param_dim=config.task_param_dim,
+                    # task_param_dim=config.task_param_dim,
                 )
                 env = BamdpResourceForaging(env, agent, config, tasks)
                 return env
@@ -84,7 +84,7 @@ def build_environment(env_name, agent, config, tasks):
                 env = BamdpMinigridKeyDoor(env, agent, config, tasks)
                 return env
 
-            elif env_name == "CheetahVel":
+            elif env_name == "CheetahVel" or "HalfCheetah-v5":
                 env = gym.make("HalfCheetah-v5")
                 env = BamdpCheetahRun(env, agent, config, tasks)
                 return env
