@@ -13,7 +13,7 @@ def train_agent(
     verbose=0,
     main_log_dir="trained_agents",
 ):
-    for experiment in range(num_experiment):
+    for _ in range(num_experiment):
         config = get_config(
             agent_name,
             env_name if isinstance(env_name, str) else f"{env_name[0]}_{env_name[1]}",
@@ -41,4 +41,4 @@ def train_agent(
 
 
 if __name__ == "__main__":
-    train_agent(env_name="CheetahDir", agent_name="S3_Meta", num_experiment=1)
+    train_agent(env_name="CheetahVel", agent_name="S3_Meta", num_experiment=1)
