@@ -41,4 +41,5 @@ def train_agent(
 
 
 if __name__ == "__main__":
-    train_agent(env_name="CheetahVel", agent_name="S3_Meta", num_experiment=1)
+    # train_agent(env_name="CheetahVel", agent_name="S3_Meta", num_experiment=1)
+    train_agent(env_name="MAB10", agent_name="SplAgger", num_experiment=1)

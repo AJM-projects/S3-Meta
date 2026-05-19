@@ -1,6 +1,7 @@
 from .S3_agent import S3Agent
 from .belief_agent import BeliefAgent
 from .humplik_agent import HumplikAgent
+from .splagger_agent import SplAggerAgent
 
 
 def build_agent(agent_name: str, config):
@@ -18,6 +19,7 @@ def build_agent(agent_name: str, config):
         "S3_Meta": S3Agent,
         "belief": BeliefAgent,
         "humplik": HumplikAgent,
+        "SplAgger": SplAggerAgent,
     }
 
     if agent_name not in agent_mapping:

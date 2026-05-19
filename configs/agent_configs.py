@@ -29,8 +29,17 @@ humplik_config = {
     "use_kl_loss": True,
 }
 
+splagger_config = {
+    "decode_reward": True,
+    "decode_task": False,
+    "use_decoder": True,
+    "contrastive_task_loss": False,
+    "use_kl_loss": False,
+}
+
 AGENT_CONFIGS = {
     "S3_Meta": S3_config,
     "belief": belief_config,
     "humplik": humplik_config,
+    "SplAgger": splagger_config,
 }
