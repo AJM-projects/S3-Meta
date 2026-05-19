@@ -3,6 +3,8 @@ from policy_network import PPOWithInfo
 from callbacks.agent_callbacks import create_agent_callbacks
 from environments.environment_builder import build_environment
 from agents import build_agent
+
+
 from agents.agent_configs import get_config
 
 
@@ -41,4 +43,5 @@ def train_agent(
 
 
 if __name__ == "__main__":
-    train_agent(env_name="CheetahVel", agent_name="S3_Meta", num_experiment=1)
+    # train_agent(env_name="CheetahVel", agent_name="S3_Meta", num_experiment=1)
+    train_agent(env_name="MAB10", agent_name="SplAgger", num_experiment=1)
