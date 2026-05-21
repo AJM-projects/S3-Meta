@@ -1,7 +1,9 @@
 """CLI entry point for hyperparameter optimisation.
 
 Usage:
-    python -m hpo.run_hpo --agent S3_Meta --env CheetahDir
+    python -m hpo.run_hpo --agent S3_Meta --env MiniGridKeyDoor
+    python -m hpo.run_hpo --agent S3_Meta --env TemporalMaze
+    python -m hpo.run_hpo --agent S3_Meta --env MiniGridTwoGoal
     python -m hpo.run_hpo --agent belief --env MAB --n_trials 30 --timesteps_fraction 0.2
     python -m hpo.run_hpo --agent humplik --env DelayedMAB --storage sqlite:///hpo.db
 
